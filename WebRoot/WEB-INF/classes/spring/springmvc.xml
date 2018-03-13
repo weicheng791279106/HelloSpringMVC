@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="
+ 			http://www.springframework.org/schema/beans 
+ 			http://www.springframework.org/schema/beans/spring-beans-3.2.xsd 
+ 			http://www.springframework.org/schema/mvc 
+ 			http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd 
+ 			http://www.springframework.org/schema/context 
+ 			http://www.springframework.org/schema/context/spring-context-3.2.xsd 
+ 			http://www.springframework.org/schema/aop 
+ 			http://www.springframework.org/schema/aop/spring-aop-3.2.xsd 
+ 			http://www.springframework.org/schema/tx 
+ 			http://www.springframework.org/schema/tx/spring-tx-3.2.xsd">
+
+
+	<!-- 配置Handler -->
+	
+	<!-- 第一种处理器：实现了Controller接口的Handler -->
+	<!-- 因为使用了BeanNameUrlHandlerMapping，所以这里的name属性就是所映射的请求url地址 -->
+	<!-- 因为使用了SimpleUrlHandlerMapping，所以这里的id:itemController可以被SimpleUrlHandlerMapping中配置的id所映射 -->
+	<bean id="itemController" name="/queryItems1.action" class="com.weicheng.controller.ItemController1"></bean>
+	
+	<!-- 第二种处理器:实现了HttpRequestHandler接口的Handler -->
+	<!-- 因为使用了BeanNameUrlHandlerMapping，所以这里的name属性就是所映射的请求url地址 -->
+	<!-- ItemController2、ItemController3都是实现了HttpRequestHandler接口的Handler -->
+	<bean name="/queryItems2.action" class="com.weicheng.controller.ItemController2"></bean>  
+	<bean name="/queryItems3.action" class="com.weicheng.controller.ItemController3"></bean>  
+	
+	<!-- 第三种处理器：使用注解的处理器 -->
+	<!-- 单个配置注解的controller ，这里使用组件扫描替代配置，可以注释掉-->
+	<!-- <bean class="com.weicheng.controller.ItemController4"></bean> -->
+	<!-- 实际开发中建议使用组件扫描 -->
+	<context:component-scan base-package="com.weicheng.controller"></context:component-scan>
+	<context:component-scan base-package="com.weicheng.ssm.controller"></context:component-scan>
+	
+	
+	
+	
+	
+	
+
+	<!-- 配置映射器 -->
+	<!-- 所有的映射器都实现HandlerMapping接口 -->
+	<!-- 多个映射器可以并存，前端控制器会找到可以处理对应url的映射器去处理请求 -->
+	
+	<!-- 第一种映射器：BeanNameUrlHandlerMapping，将Handler所对应的bean的name属性作为url进行查找，需要在xml文件中配置handler的bean -->
+	<bean class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"></bean>
+
+	<!-- 第二种映射器:SimpleUrlHandlerMapping，使用Handler bean的id属性进行映射 -->
+	<bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="mappings">
+			<props>
+				<!-- 把/queryItemUrl.action地址映射到id为itemController的Handler bean上-->
+				<prop key="/queryItemUrl.action">itemController</prop>
+			</props>
+		</property>
+	</bean>
+	
+	<!-- 第三种映射器：RequestMappingHandlerMapping：注解用映射器 ，必须与注解用适配器配对使用-->
+	<!-- 由于开启了注解驱动<mvc:annotation-driven>，所以这里可以注释掉了，效果一样 -->
+	<!-- <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"></bean> -->
+
+
+
+	<!-- 配置适配器 -->
+	<!-- 所有的适配器都实现HandlerAdapter接口 -->
+	
+	<!-- 第一种适配器：SimpleControllerHandlerAdapter：只能处理实现了Controller接口的Handler -->
+	<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter"></bean>
+	
+	<!-- 第二种适配器：HttpRequestHandlerAdapter：只能处理实现了HttpRequestHandler接口的Handler -->
+	<bean class="org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter"></bean>
+	
+	<!-- 第三种适配器：RequestMappingHandlerAdapter：注解用 适配器，必须与注注解用映射器配对使用-->
+	<!-- 由于开启了注解驱动<mvc:annotation-driven>，所以这里可以注释掉了，效果一样 -->
+	<!-- <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter"></bean> -->
+	
+	
+	<!-- 配置视图解析器 -->
+	<!-- 解析jsp，默认使用jstl标签，classpath下需要有jstl的包 -->
+	<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<!-- 配置视图路径前缀 -->
+		<property name="prefix" value="/WEB-INF/jsp/"></property>
+		<!-- 配置视图路径后缀 -->
+		<property name="suffix" value=".jsp"></property>
+	</bean>
+	
+	
+	<!-- 注解驱动 -->
+	<!-- 使用注解驱动可以代替上边的RequestMappingHandlerMapping和RequestMappingHandlerAdapter的配置，
+		 mvc:annotation-driven默认加载了很多参数绑定的方法，比如json转换解析器等。实际开发时多使用mvc:annotation-driven -->
+	<!-- conversion-service为参数转换服务，用来将特定传入参数进行自动转换 -->	 
+	<mvc:annotation-driven conversion-service="conversionService"></mvc:annotation-driven>
+	
+	
+	<!-- 自定义的参数转换服务 -->
+	<bean id="conversionService" class="org.springframework.format.support.FormattingConversionServiceFactoryBean">
+		<!-- 配置自定义转换器 -->
+		<property name="converters">
+			<list>
+				<bean class="com.weicheng.ssm.converter.CustomDateConverter"></bean>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- 全局异常处理器 -->
+	<!-- 只要实现了HandlerExceptionResolver接口就是全局异常处理器，注意：不能配置多个 -->
+	<bean class="com.weicheng.exception.CustomExceptionResolver"></bean>
+	
+	<!-- 文件上传 -->
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<!-- 设置上传文件最大尺寸为5MB -->
+		<property name="maxUploadSize">
+			<value>5242880</value>
+		</property>
+	</bean>
+	
+	<!-- 配置拦截器演示 -->
+	<!-- 多个拦截器，顺序执行 -->
+	<mvc:interceptors>
+		<!-- 登录拦截器：支持ssm项目登录验证功能 -->
+		<mvc:interceptor>
+			<!-- path属性中，如果是*，则拦截*号所在的所有地址，例如/items/queryItems,/items/editItems等 -->
+			<!-- path属性中，如果是**，则拦截更深层的所有地址，例如/items/queryItems,/items/ssm/editItems等 -->
+			<mvc:mapping path="/items/**"/> 
+			<bean class="com.weicheng.ssm.interceptor.LoginInterceptor"></bean>
+		</mvc:interceptor>
+		<!-- 演示拦截器 -->
+		<mvc:interceptor>
+			<mvc:mapping path="/**"/>
+			<bean class="com.weicheng.interceptor.HandlerInterceptor1"></bean>
+		</mvc:interceptor>
+		<!-- 演示拦截器 -->
+		<mvc:interceptor>
+			<mvc:mapping path="/**"/>
+			<bean class="com.weicheng.interceptor.HandlerInterceptor2"></bean>
+		</mvc:interceptor>
+	</mvc:interceptors>
+	
+</beans>
+
+
+
+

@@ -1,2 +1,0 @@
-# HelloSpringMVC
-SpringMVC Learning
